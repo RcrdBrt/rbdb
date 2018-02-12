@@ -1,6 +1,8 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
+#include <string>
+
 struct Config {
 	int port;
 	std::string address, airport_path;
