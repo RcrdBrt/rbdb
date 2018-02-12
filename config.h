@@ -1,0 +1,15 @@
+#ifndef CONFIG_H
+#define CONFIG_H
+
+struct Config {
+	int port;
+	std::string address, airport_path;
+
+	Config();
+	Config(const std::string& path);
+	Config(const Config& orig);
+	virtual ~Config();
+};
+
+
+#endif
