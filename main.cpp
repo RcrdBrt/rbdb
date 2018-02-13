@@ -1,6 +1,6 @@
 #include <iostream>
-#include "config.h"
-#include "server.h"
+#include "src/config.h"
+#include "src/server.h"
 
 int main() {
 	Server(Config("conf.toml")).start();

@@ -2,3 +2,6 @@
 rbdb
 *.o
 rbdb_data
+build
+bin
+

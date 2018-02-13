@@ -1,9 +1,9 @@
 [submodule "Simple-Web-Server"]
-	path = Simple-Web-Server
+	path = vendor/Simple-Web-Server
 	url = https://github.com/eidheim/Simple-Web-Server
 [submodule "tinytoml"]
-	path = tinytoml
+	path = vendor/tinytoml
 	url = https://github.com/mayah/tinytoml
 [submodule "json"]
-	path = json
+	path = vendor/json
 	url = https://github.com/nlohmann/json

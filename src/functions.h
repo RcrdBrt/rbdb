@@ -6,7 +6,7 @@
 #include <boost/uuid/uuid_generators.hpp>
 
 #include "rocksdb/db.h"
-#include "json/single_include/nlohmann/json.hpp"
+#include "nlohmann/json.hpp"
 
 namespace utils {
 

@@ -1,34 +1,35 @@
-files = main.cpp
+# Docs on how to build this Makefile:
+# http://www.lunderberg.com/2015/08/08/cpp-makefile/
 
-flags = -ISimple-Web-Server -Itinytoml/include -Ijson/single_include \
-	-lboost_system -lboost_filesystem -lrocksdb -lpthread -lboost_date_time \
-	-pedantic -Wall \
+CFLAGS = -Ivendor/Simple-Web-Server \
+	 -Ivendor/tinytoml/include \
+	 -Ivendor/json/single_include \
+	-lboost_system \
+	-lboost_filesystem \
+	-lrocksdb \
+	-lpthread \
+	-lboost_date_time \
+	-pedantic \
+	-Wall \
 	-g \
-	#-Ofast -flto -march=native -s # high performance flags
-	-MMD \ # outputs dependencies in a way "make" can understand
+	#-Ofast -flto -march=native -s # high performance CFLAGS
 
+EXE_SRC_FILES = $(wildcard *.cpp)
+EXECUTABLES = $(patsubst %.cpp,bin/%,$(EXE_SRC_FILES))
+SRC_FILES = $(wildcard src/*.cpp)
+O_FILES = $(patsubst %.cpp,build/%.o,$(SRC_FILES))
 
-objects = main.o database.o server.o config.o functions.o
+all: $(EXECUTABLES)
 
-all: $(objects) exceptions.h
-	g++ $(objects) $(flags) -o rbdb
-	#strip -s rbdb
+bin/%: build/%.o $(O_FILES)
+	mkdir -p bin
+	g++ $^ -o $@
 
-clean: $(objects) rbdb
+build/%.o: %.cpp
+	mkdir -p $(@D)
+	g++ -c $(CFLAGS) $< -o $@
+
+.PHONY: clean
+clean: %.o rbdb
 	rm *.o rbdb
-	rm -rf rbdb_data
-
-main.o: main.cpp
-	g++ -c main.cpp $(flags) -o main.o
-
-database.o: database.cpp database.h
-	g++ -c database.cpp $(flags) -o database.o
-
-server.o: server.cpp server.h
-	g++ -c server.cpp $(flags) -o server.o
-
-config.o: config.cpp config.h
-	g++ -c config.cpp $(flags) -o config.o
-
-functions.o: functions.cpp functions.h
-	g++ -c functions.cpp $(flags) -o functions.o
+	rm -r rbdb_data
