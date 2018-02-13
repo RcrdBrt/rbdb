@@ -10,7 +10,7 @@ objects = main.o database.o server.o config.o functions.o
 
 all: $(objects) exceptions.h
 	g++ $(objects) $(flags) -o rbdb
-	strip -s rbdb
+	#strip -s rbdb
 
 clean: $(objects) rbdb
 	rm *.o rbdb
