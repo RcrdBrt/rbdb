@@ -1,3 +1,4 @@
 *.s*
 rbdb
 *.o
+rbdb_data

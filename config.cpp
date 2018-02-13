@@ -10,7 +10,7 @@ Config::Config() {}
 Config::Config(const Config& orig) {
 	port = orig.port;
 	address = orig.address;
-	airport_path = orig.airport_path;
+	dir_path = orig.dir_path;
 }
 
 Config::Config(const std::string& path) {
@@ -39,7 +39,7 @@ Config::Config(const std::string& path) {
 	// database path from config file
 	x = v.find("database.path");
 	if (x && x->is<std::string>()) {
-		airport_path = x->as<std::string>();
+		dir_path = x->as<std::string>();
 	} else {
 		throw config_error() << exc_info("Database path error");
 	}

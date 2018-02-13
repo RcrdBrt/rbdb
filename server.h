@@ -4,6 +4,7 @@
 #include "server_http.hpp"
 #include "config.h"
 #include <memory>
+#include "database.h"
 
 using HttpServer = SimpleWeb::Server<SimpleWeb::HTTP>;
 using Request = std::shared_ptr<HttpServer::Request>;

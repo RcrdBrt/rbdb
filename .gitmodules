@@ -4,3 +4,6 @@
 [submodule "tinytoml"]
 	path = tinytoml
 	url = https://github.com/mayah/tinytoml
+[submodule "json"]
+	path = json
+	url = https://github.com/nlohmann/json

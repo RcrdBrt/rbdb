@@ -5,7 +5,7 @@
 
 struct Config {
 	int port;
-	std::string address, airport_path;
+	std::string address, dir_path;
 
 	Config();
 	Config(const std::string& path);
