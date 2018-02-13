@@ -2,17 +2,18 @@
 # http://www.lunderberg.com/2015/08/08/cpp-makefile/
 
 CFLAGS = -Ivendor/Simple-Web-Server \
-	 -Ivendor/tinytoml/include \
-	 -Ivendor/json/single_include \
+	-Ivendor/tinytoml/include \
+	-Ivendor/json/single_include \
+	-Iinclude \
 	-lboost_system \
 	-lboost_filesystem \
 	-lrocksdb \
 	-lpthread \
 	-lboost_date_time \
-	-pedantic \
-	-Wall \
 	-g \
-	#-Ofast -flto -march=native -s # high performance CFLAGS
+	-Wno-psabi \
+	-MMD \
+	-Ofast -flto -march=native -s # high performance CFLAGS
 
 EXE_SRC_FILES = $(wildcard *.cpp)
 EXECUTABLES = $(patsubst %.cpp,bin/%,$(EXE_SRC_FILES))
@@ -23,13 +24,14 @@ all: $(EXECUTABLES)
 
 bin/%: build/%.o $(O_FILES)
 	mkdir -p bin
-	g++ $^ -o $@
+	g++ $^ $(CFLAGS) -o $@
 
 build/%.o: %.cpp
 	mkdir -p $(@D)
 	g++ -c $(CFLAGS) $< -o $@
 
+-include $(shell find build -name "*.d" 2> /dev/null)
+
 .PHONY: clean
-clean: %.o rbdb
-	rm *.o rbdb
-	rm -r rbdb_data
+clean:
+	rm -r build bin
