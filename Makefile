@@ -3,6 +3,7 @@ files = main.cpp
 flags = -ISimple-Web-Server -Itinytoml/include -Ijson/single_include \
 	-lboost_system -lboost_filesystem -lrocksdb -lpthread -lboost_date_time \
 	-pedantic -Wall \
+	-g \
 	#-Ofast -flto -march=native -s # high performance flags
 
 objects = main.o database.o server.o config.o functions.o
