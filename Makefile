@@ -5,6 +5,8 @@ flags = -ISimple-Web-Server -Itinytoml/include -Ijson/single_include \
 	-pedantic -Wall \
 	-g \
 	#-Ofast -flto -march=native -s # high performance flags
+	-MMD \ # outputs dependencies in a way "make" can understand
+
 
 objects = main.o database.o server.o config.o functions.o
 
