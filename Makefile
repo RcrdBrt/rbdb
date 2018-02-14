@@ -36,4 +36,4 @@ build/%.o: %.cpp
 
 .PHONY: clean
 clean:
-	rm -r build bin
+	rm -rf build bin

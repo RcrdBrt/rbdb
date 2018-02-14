@@ -26,30 +26,42 @@ bool Database::insert(const std::string& table_name,
 	if (s.ok()) {
 		std::string incr_id_str, registry, uuid;
 		uuid = boost::uuids::to_string(uuid_gen());
+		std::cout << "UUID: " << uuid << std::endl;
 		s = db->Get(rocksdb::ReadOptions(), "incr_id", &incr_id_str);
+		std::cout << "Incr_id_str: " << incr_id_str << std::endl;
 		db->Get(rocksdb::ReadOptions(), "registry", &registry);
-		json j = json::parse(registry);
-		j[uuid] = payload;
+		std::cout << "Registry: " << registry << std::endl;
+		json j;
 		rocksdb::WriteBatch batch;
 		if (s.ok()) { // db already existent (exists incr_id)
+			j = json::parse(registry);
 			long long incr_id = std::atoll(incr_id_str.c_str());
 			incr_id_str = std::to_string(++incr_id);
-			// starts the write
 			batch.Put("incr_id", incr_id_str);
 			batch.Put(incr_id_str, uuid);
 		} else { // new db
-			// starts the write
+			j = json::parse("{}");
 			batch.Put("incr_id", "1");
 			batch.Put("1", uuid);
 		}
+		j[uuid] = payload;
 		batch.Put(uuid, payload);
 		batch.Put(utils::iso_time(), uuid);
 		batch.Put("registry", j.dump());
 		db->Write(rocksdb::WriteOptions(), &batch);
+#ifdef DEBUG
+		json debug_print;
+		debug_print["uuid"] = uuid;
+		debug_print["incr_id_str"] = incr_id_str;
+		debug_print["payload"] = payload;
+		debug_print["s.ok()?"] = s.ok();
+		debug_print["registry"] = j.dump();
+		std::cout << debug_print.dump(2) << std::endl;
+#endif
 		delete db;
 		return true;
 	} else {
-		std::cout << "Cannot create the database: " 
+		std::cout << "Cannot access the database: " 
 			<< s.ToString() << std::endl;
 	}
 

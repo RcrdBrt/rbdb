@@ -22,19 +22,20 @@ Server::Server(const Config& conf) {
 		};
 
 	// create
-	server.resource["^/rbdb/([a-zA-Z_])(/{1})?$"]["POST"] =
+	server.resource["^/rbdb/([a-zA-Z_]+)(/{1})?$"]["POST"] =
 		[](Response res, Request req) {
 			Database db_instance;
-			std::cout << "Created database instance\n";
 			std::string payload = req->content.string();
-			std::cout << payload << std::endl;
 			std::string table_name = req->path_match[1];
+#ifdef DEBUG
+			std::cout << "Payload: " << payload << std::endl;
+			std::cout << "Table: " << table_name << std::endl;
+#endif
 			if (db_instance.insert(table_name, payload)) {
 				res->write("HTTP/1.1 200 OK\r\n");
 			} else {
 				res->write("HTTP/1.1 500 Internal Server Error\r\n");
 			}
-			*res << "HTTP/1.1 200 OK\r\n";
 		};
 }
 
