@@ -13,7 +13,8 @@ CFLAGS = -Ivendor/Simple-Web-Server \
 	-g \
 	-Wno-psabi \
 	-MMD \
-	-Ofast -flto -march=native -s # high performance CFLAGS
+	-DDEBUG \
+	#-Ofast -flto -march=native -s # high performance CFLAGS
 
 EXE_SRC_FILES = $(wildcard *.cpp)
 EXECUTABLES = $(patsubst %.cpp,bin/%,$(EXE_SRC_FILES))
@@ -25,6 +26,7 @@ all: $(EXECUTABLES)
 bin/%: build/%.o $(O_FILES)
 	mkdir -p bin
 	g++ $^ $(CFLAGS) -o $@
+	ln -sf conf.toml bin/.
 
 build/%.o: %.cpp
 	mkdir -p $(@D)
