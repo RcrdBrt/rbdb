@@ -34,19 +34,12 @@ Server::Server(const Config& conf) {
 			std::cout << "Payload: " << payload << std::endl;
 			std::cout << "Table: " << table_name << std::endl;
 #endif
-			std::string content_type = 
-				(req->header.find("Content-Type"))->second;
-			if (content_type != "application/json") {
-				std::cerr << "Payload isn't JSON!\n";
-				res->write("HTTP/1.1 400 Bad Request\r\n");
-				return;
-			}
 			json_ptr json_payload;
 			try {
 				json_payload =
 					std::make_shared<json>(json::parse(payload));
 			} catch (json::parse_error& e) {
-				std::cerr << "Payload isn't JSON!:" << e.what();
+				std::cerr << e.what() << std::endl;
 				res->write("HTTP/1.1 400 Bad Request\r\n");
 				return;
 			}

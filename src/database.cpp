@@ -16,9 +16,7 @@ Database::Database() {
 
 Database::~Database() {}
 
-Database::Database(const Database& orig) : 
-	options(orig.options),
-	uuid_gen(orig.uuid_gen) {}
+Database::Database(const Database& orig) : options(orig.options), uuid_gen(orig.uuid_gen) {}
 
 bool Database::exists(const std::string& table_name) const {
 	return boost::filesystem::exists(table_name);
@@ -32,9 +30,34 @@ bool Database::insert(const std::string& table_name,
 	payload_str = payload->dump();
 	uuid = boost::uuids::to_string(uuid_gen());
 	s = db->Get(rocksdb::ReadOptions(), "incr_id", &incr_id_str);
-	if (!s.ok()) {
-		std::cerr << s.ToString() << std::endl;
-		return false;
+	/* status codes for rocksdb
+
+	 kOk = 0,
+	 kNotFound = 1,
+	 kCorruption = 2,
+	 kNotSupported = 3,
+	 kInvalidArgument = 4,
+	 kIOError = 5,
+	 kMergeInProgress = 6,
+	 kIncomplete = 7,
+	 kShutdownInProgress = 8,
+	 kTimedOut = 9,
+	 kAborted = 10,
+	 kBusy = 11,
+	 kExpired = 12,
+	 kTryAgain = 13
+
+	 */
+	switch (s.code()) {
+		case 0:
+			// db already existent
+			break;
+		case 1:
+			// new database
+			break;
+		default:
+			delete db;
+			return false;
 	}
 	db->Get(rocksdb::ReadOptions(), "registry", &registry);
 #ifdef DEBUG
@@ -65,7 +88,7 @@ bool Database::insert(const std::string& table_name,
 	debug_print["uuid"] = uuid;
 	debug_print["incr_id_str"] = incr_id_str;
 	debug_print["payload"] = payload_str;
-	debug_print["s.ok()?"] = s.ok();
+	debug_print["status code"] = s.code();
 	debug_print["registry"] = reg.dump();
 	std::cout << debug_print.dump(4) << std::endl;
 #endif
