@@ -6,7 +6,6 @@
 #include <boost/uuid/uuid_io.hpp>
 #include <boost/filesystem.hpp>
 #include <iostream>
-#include <thread>
 
 Database::Database() {
 	options.create_if_missing = true;
@@ -37,9 +36,6 @@ bool Database::insert(const std::string& table_name, const json_ptr payload) {
 	}
 	std::string incr_id_str, uuid, payload_str;
 	uuid = boost::uuids::to_string(uuid_gen());
-	auto registry_thread = std::thread([=]{
-			update_registry(uuid, payload);
-			});
 	payload_str = payload->dump();
 	s = db->Get(rocksdb::ReadOptions(), "incr_id", &incr_id_str);
 	rocksdb::WriteBatch batch;
@@ -57,7 +53,6 @@ bool Database::insert(const std::string& table_name, const json_ptr payload) {
 			batch.Put("1", uuid);
 			break;
 		default:
-			registry_thread.join();
 			delete db;
 			std::cerr << s.ToString() << std::endl;
 			return false;
@@ -65,33 +60,91 @@ bool Database::insert(const std::string& table_name, const json_ptr payload) {
 	batch.Put(uuid, payload_str);
 	batch.Put(utils::iso_time(), uuid);
 	db->Write(rocksdb::WriteOptions(), &batch);
+	update_registry(uuid, payload);
 #ifdef DEBUG
 	std::cout << "JSON insert: ";
 	json debug_print;
 	debug_print["uuid"] = uuid;
 	debug_print["id"] = incr_id_str;
 	debug_print["payload"] = payload_str;
-	std::cout << debug_print.dump(4) << std::endl;
+	std::cout << debug_print.dump(4) << std::endl << std::endl;
+	std::cout << "-----------------------------" << std::endl << std::endl;
 #endif
-	registry_thread.join();
 	delete db;
 	return true;
 }
 
 bool Database::update_registry(const std::string& uuid, const json_ptr payload) {
 	rocksdb::DB* db;
-	if (!payload->is_object()) return false;
+	rocksdb::WriteBatch batch;
+	rocksdb::Status s;
+	json contains_key_json;
 	std::vector<std::string> keys_vector;
+	std::string contains_key_string;
+	if (!payload->is_object()) return false;
+	rocksdb::DB::Open(options, "registry", &db);
 	for (json::iterator it = payload->begin(); it != payload->end(); ++it) {
 		keys_vector.push_back(it.key());
-	}
-	rocksdb::DB::Open(options, "registry", &db);
-	json keys_json(keys_vector);
-	db->Put(rocksdb::WriteOptions(), uuid, keys_json.dump());
+		s = db->Get(rocksdb::ReadOptions(), it.key(), &contains_key_string);
+		if (s.IsNotFound()) {
+			contains_key_json.push_back(uuid);
+		} else {
+			if (s.ok()) {
+				contains_key_json = json::parse(contains_key_string);
+				contains_key_json.push_back(uuid);
+			} else {
+				//invalid status
+				delete db;
+				return false;
+			}
+		}
+		db->Put(rocksdb::WriteOptions(), it.key(), contains_key_json.dump());
 #ifdef DEBUG
-	std::cout << "Registry entry: ";
+		std::cout << "Contains_key_json (" + it.key() + "): ";
+		std::cout << contains_key_json.dump(4) << std::endl;
+#endif
+		contains_key_json.clear();
+	}
+	json keys_json(keys_vector);
+	batch.Put(uuid, keys_json.dump());
+	db->Write(rocksdb::WriteOptions(), &batch);
+#ifdef DEBUG
+	std::cout << "Registry entry (keys list): ";
 	std::cout << keys_json.dump(4) << std::endl;
 #endif
 	delete db;
 	return true;
+}
+
+const std::string Database::get(const std::string& table_name, const std::string& key) const {
+	rocksdb::DB* db;
+	rocksdb::DB* registry_db;
+	rocksdb::Status s;
+	std::string contains_key_string;
+	json refined_result, result_tmp;
+	s = rocksdb::DB::Open(options, table_name, &db);
+	if (!s.ok()) {
+		delete db;
+		return nullptr;
+	}
+	s = rocksdb::DB::Open(options, "registry", &registry_db);
+	if (!s.ok()) {
+		delete db;
+		delete registry_db;
+		return nullptr;
+	}
+	registry_db->Get(rocksdb::ReadOptions(), key, &contains_key_string);
+	result_tmp = json::parse(contains_key_string);
+	if (!result_tmp.is_array()) {
+		delete db, registry_db;
+		return nullptr;
+	}
+	for (auto& i : result_tmp) {
+		db->Get(rocksdb::ReadOptions(), i.dump(), &contains_key_string); // contains_key_string is a container
+		refined_result.push_back(contains_key_string);
+	}
+	delete db;
+	delete registry_db;
+
+	return refined_result.dump();
 }
