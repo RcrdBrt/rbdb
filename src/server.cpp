@@ -27,7 +27,7 @@ Server::Server(const Config& conf) {
 	// insert
 	server.resource["^/rbdb/([a-zA-Z_]+)(/{1})?$"]["POST"] =
 		[](Response res, Request req) {
-			Database db_instance;
+			Database db;
 			std::string payload = req->content.string();
 			std::string table_name = req->path_match[1];
 			json_ptr json_payload;
@@ -40,7 +40,7 @@ Server::Server(const Config& conf) {
 				return;
 			}
 
-			if (db_instance.insert(table_name, json_payload)) {
+			if (db.insert(table_name, json_payload)) {
 				res->write("HTTP/1.1 200 OK\r\n");
 			} else {
 				res->write("HTTP/1.1 500 Internal Server Error\r\n");
@@ -54,6 +54,18 @@ Server::Server(const Config& conf) {
 			j["table"] = req->path_match[1];
 			j["exists"] = db.exists(j["table"]);
 			std::string content = j.dump(4);
+			*res << *(res_str(content.length(), content));
+		};
+	
+	server.resource["^/rbdb/([a-zA-Z_]+)/([a-zA-Z0-9_]+)(/{1})?$"]["GET"] =
+		[](Response res, Request req) {
+			Database db;
+			std::string content = db.get(req->path_match[1],
+					req->path_match[2]);
+			if (content.empty()) {
+				*res << "HTTP/1.1 404 Not Found\r\n";
+				return;
+			}
 			*res << *(res_str(content.length(), content));
 		};
 }
