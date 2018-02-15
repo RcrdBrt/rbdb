@@ -9,6 +9,9 @@
 
 Database::Database() {
 	options.create_if_missing = true;
+	options.max_background_compactions = 4;
+	options.max_background_flushes = 2;
+	options.bytes_per_sync = 1048576;
 }
 
 Database::~Database() {}
