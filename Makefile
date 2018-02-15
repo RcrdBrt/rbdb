@@ -26,11 +26,11 @@ all: $(EXECUTABLES)
 
 bin/%: build/%.o $(O_FILES)
 	@mkdir -p bin
-	g++ $^ $(CFLAGS) -o $@ 2> link_err.log
+	g++ $^ $(CFLAGS) -o $@
 
 build/%.o: %.cpp
 	@mkdir -p $(@D)
-	g++ -c $(CFLAGS) $< -o $@ 2> compile_err.log
+	g++ -c $(CFLAGS) $< -o $@
 
 -include $(shell find build -name "*.d" 2> /dev/null)
 

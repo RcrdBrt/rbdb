@@ -8,6 +8,8 @@
 #include "functions.h"
 #include "nlohmann/json.hpp"
 
+typedef std::shared_ptr<json> json_ptr;
+
 Server::Server() {}
 
 Server::Server(const Config& conf) {
@@ -33,13 +35,23 @@ Server::Server(const Config& conf) {
 			std::cout << "Table: " << table_name << std::endl;
 #endif
 			std::string content_type = 
-				(*(req->header.find("Content-Type"))).second;
+				(req->header.find("Content-Type"))->second;
 			if (content_type != "application/json") {
+				std::cerr << "Payload isn't JSON!\n";
+				res->write("HTTP/1.1 400 Bad Request\r\n");
+				return;
+			}
+			json_ptr json_payload;
+			try {
+				json_payload =
+					std::make_shared<json>(json::parse(payload));
+			} catch (json::parse_error& e) {
+				std::cerr << "Payload isn't JSON!:" << e.what();
 				res->write("HTTP/1.1 400 Bad Request\r\n");
 				return;
 			}
 
-			if (db_instance.insert(table_name, payload)) {
+			if (db_instance.insert(table_name, json_payload)) {
 				res->write("HTTP/1.1 200 OK\r\n");
 			} else {
 				res->write("HTTP/1.1 500 Internal Server Error\r\n");
