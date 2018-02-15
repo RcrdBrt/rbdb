@@ -30,10 +30,6 @@ Server::Server(const Config& conf) {
 			Database db_instance;
 			std::string payload = req->content.string();
 			std::string table_name = req->path_match[1];
-#ifdef DEBUG
-			std::cout << "Payload: " << payload << std::endl;
-			std::cout << "Table: " << table_name << std::endl;
-#endif
 			json_ptr json_payload;
 			try {
 				json_payload =

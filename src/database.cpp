@@ -6,6 +6,7 @@
 #include <boost/uuid/uuid_io.hpp>
 #include <boost/filesystem.hpp>
 #include <iostream>
+#include <thread>
 
 Database::Database() {
 	options.create_if_missing = true;
@@ -16,81 +17,80 @@ Database::Database() {
 
 Database::~Database() {}
 
-Database::Database(const Database& orig) : options(orig.options), uuid_gen(orig.uuid_gen) {}
+Database::Database(const Database& orig) : uuid_gen(orig.uuid_gen) {}
+
+
 
 bool Database::exists(const std::string& table_name) const {
 	return boost::filesystem::exists(table_name);
 }
 
-bool Database::insert(const std::string& table_name,
-		const json_ptr payload) {
+bool Database::insert(const std::string& table_name, const json_ptr payload) {
 	rocksdb::DB* db;
-	rocksdb::Status s = rocksdb::DB::Open(options, table_name, &db);
-	std::string incr_id_str, registry, uuid, payload_str;
-	payload_str = payload->dump();
+	rocksdb::Status s;
+	long long incr_id;
+	s = rocksdb::DB::Open(options, table_name, &db);
+	if (!s.ok()) {
+		delete db;
+		std::cerr << s.ToString() << std::endl;
+		return false;
+	}
+	std::string incr_id_str, uuid, payload_str;
 	uuid = boost::uuids::to_string(uuid_gen());
+	auto registry_thread = std::thread([=]{
+			update_registry(uuid, payload);
+			});
+	payload_str = payload->dump();
 	s = db->Get(rocksdb::ReadOptions(), "incr_id", &incr_id_str);
-	/* status codes for rocksdb
-
-	 kOk = 0,
-	 kNotFound = 1,
-	 kCorruption = 2,
-	 kNotSupported = 3,
-	 kInvalidArgument = 4,
-	 kIOError = 5,
-	 kMergeInProgress = 6,
-	 kIncomplete = 7,
-	 kShutdownInProgress = 8,
-	 kTimedOut = 9,
-	 kAborted = 10,
-	 kBusy = 11,
-	 kExpired = 12,
-	 kTryAgain = 13
-
-	 */
+	rocksdb::WriteBatch batch;
 	switch (s.code()) {
 		case 0:
 			// db already existent
+			incr_id = std::atoll(incr_id_str.c_str());
+			incr_id_str = std::to_string(++incr_id);
+			batch.Put("incr_id", incr_id_str);
+			batch.Put(incr_id_str, uuid);
 			break;
 		case 1:
 			// new database
+			batch.Put("incr_id", "1");
+			batch.Put("1", uuid);
 			break;
 		default:
+			registry_thread.join();
 			delete db;
+			std::cerr << s.ToString() << std::endl;
 			return false;
 	}
-	db->Get(rocksdb::ReadOptions(), "registry", &registry);
-#ifdef DEBUG
-	std::cout << "UUID: " << uuid << std::endl;
-	std::cout << "Incr_id_str: " << incr_id_str << std::endl;
-	std::cout << "Registry: " << registry << std::endl;
-#endif
-	json reg;
-	rocksdb::WriteBatch batch;
-	if (s.ok()) { // db already existent (exists incr_id)
-		reg = json::parse(registry);
-		long long incr_id = std::atoll(incr_id_str.c_str());
-		incr_id_str = std::to_string(++incr_id);
-		batch.Put("incr_id", incr_id_str);
-		batch.Put(incr_id_str, uuid);
-	} else { // new db
-		reg = {};
-		batch.Put("incr_id", "1");
-		batch.Put("1", uuid);
-	}
-	reg[uuid] = payload_str;
 	batch.Put(uuid, payload_str);
 	batch.Put(utils::iso_time(), uuid);
-	batch.Put("registry", reg.dump());
 	db->Write(rocksdb::WriteOptions(), &batch);
 #ifdef DEBUG
+	std::cout << "JSON insert: ";
 	json debug_print;
 	debug_print["uuid"] = uuid;
-	debug_print["incr_id_str"] = incr_id_str;
+	debug_print["id"] = incr_id_str;
 	debug_print["payload"] = payload_str;
-	debug_print["status code"] = s.code();
-	debug_print["registry"] = reg.dump();
 	std::cout << debug_print.dump(4) << std::endl;
+#endif
+	registry_thread.join();
+	delete db;
+	return true;
+}
+
+bool Database::update_registry(const std::string& uuid, const json_ptr payload) {
+	rocksdb::DB* db;
+	if (!payload->is_object()) return false;
+	std::vector<std::string> keys_vector;
+	for (json::iterator it = payload->begin(); it != payload->end(); ++it) {
+		keys_vector.push_back(it.key());
+	}
+	rocksdb::DB::Open(options, "registry", &db);
+	json keys_json(keys_vector);
+	db->Put(rocksdb::WriteOptions(), uuid, keys_json.dump());
+#ifdef DEBUG
+	std::cout << "Registry entry: ";
+	std::cout << keys_json.dump(4) << std::endl;
 #endif
 	delete db;
 	return true;
