@@ -12,6 +12,7 @@ CFLAGS = -Ivendor/Simple-Web-Server \
 	-lboost_date_time \
 	-g \
 	-Wno-psabi \
+	-pedantic \
 	-MMD \
 	-DDEBUG \
 	#-Ofast -flto -march=native -s # high performance CFLAGS
@@ -24,16 +25,15 @@ O_FILES = $(patsubst %.cpp,build/%.o,$(SRC_FILES))
 all: $(EXECUTABLES)
 
 bin/%: build/%.o $(O_FILES)
-	mkdir -p bin
-	g++ $^ $(CFLAGS) -o $@
-	ln -sf conf.toml bin/.
+	@mkdir -p bin
+	g++ $^ $(CFLAGS) -o $@ 2> link_err.log
 
 build/%.o: %.cpp
-	mkdir -p $(@D)
-	g++ -c $(CFLAGS) $< -o $@
+	@mkdir -p $(@D)
+	g++ -c $(CFLAGS) $< -o $@ 2> compile_err.log
 
 -include $(shell find build -name "*.d" 2> /dev/null)
 
 .PHONY: clean
 clean:
-	rm -rf build bin
+	rm -rf build bin *.log

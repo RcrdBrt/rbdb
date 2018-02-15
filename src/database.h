@@ -10,6 +10,7 @@ struct Database {
 	~Database();
 	Database(const Database& orig);
 	bool insert(const std::string& table_name, const std::string& payload);
+	bool exists(const std::string& table_name) const;
 
 	rocksdb::Options options;
 	boost::uuids::random_generator uuid_gen;

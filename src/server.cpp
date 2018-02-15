@@ -6,6 +6,7 @@
 #include <memory>
 #include "database.h"
 #include "functions.h"
+#include "nlohmann/json.hpp"
 
 Server::Server() {}
 
@@ -21,7 +22,7 @@ Server::Server(const Config& conf) {
 			*res << "HTTP/1.1 200 OK\r\n";
 		};
 
-	// create
+	// insert
 	server.resource["^/rbdb/([a-zA-Z_]+)(/{1})?$"]["POST"] =
 		[](Response res, Request req) {
 			Database db_instance;
@@ -31,12 +32,44 @@ Server::Server(const Config& conf) {
 			std::cout << "Payload: " << payload << std::endl;
 			std::cout << "Table: " << table_name << std::endl;
 #endif
+			std::string content_type = 
+				(*(req->header.find("Content-Type"))).second;
+			if (content_type != "application/json") {
+				res->write("HTTP/1.1 400 Bad Request\r\n");
+				return;
+			}
+
 			if (db_instance.insert(table_name, payload)) {
 				res->write("HTTP/1.1 200 OK\r\n");
 			} else {
 				res->write("HTTP/1.1 500 Internal Server Error\r\n");
 			}
 		};
+
+	server.resource["^/rbdb/([a-zA-Z_]+)(/{1})?$"]["GET"] =
+		[](Response res, Request req) {
+			json j;
+			Database db;
+			j["table"] = req->path_match[1];
+			j["exists"] = db.exists(j["table"]);
+			std::string content = j.dump(4);
+			*res << *(res_str(content.length(), content));
+		};
+}
+
+const str_ptr res_str(const std::string& content_length,
+		const std::string& content) {
+	const str_ptr p = std::make_shared<std::string>(
+			"HTTP/1.1 200 OK\r\nContent-Length: "
+		+ content_length + "\r\n\r\n" + content);
+	
+	return p;
+}
+
+const str_ptr res_str(const std::size_t& content_length,
+		const std::string& content) {
+	
+	return res_str(std::to_string(content_length), content);
 }
 
 Server::~Server() {}

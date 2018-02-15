@@ -3,7 +3,7 @@
 #include "src/server.h"
 
 int main() {
-	Server(Config("conf.toml")).start();
+	Server(Config("/etc/rbdb_conf.toml")).start();
 
 	return 0;
 }

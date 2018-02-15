@@ -4,6 +4,7 @@
 #include <rocksdb/db.h>
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_io.hpp>
+#include <boost/filesystem.hpp>
 #include <nlohmann/json.hpp>
 #include <iostream>
 
@@ -18,6 +19,10 @@ Database::~Database() {}
 Database::Database(const Database& orig) : 
 	options(orig.options),
 	uuid_gen(orig.uuid_gen) {}
+
+bool Database::exists(const std::string& table_name) const {
+	return boost::filesystem::exists(table_name);
+}
 
 bool Database::insert(const std::string& table_name,
 		const std::string& payload) {
