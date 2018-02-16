@@ -120,8 +120,8 @@ const std::string Database::get(const std::string& table_name, const std::string
 	rocksdb::DB* db;
 	rocksdb::DB* registry_db;
 	rocksdb::Status s;
-	std::string contains_key_string;
-	json refined_result, result_tmp;
+	std::string uuids_res_string, transient_res_string;
+	json uuids_res_json, transient_res_json, res;
 	s = rocksdb::DB::Open(options, table_name, &db);
 	if (!s.ok()) {
 		delete db;
@@ -133,18 +133,33 @@ const std::string Database::get(const std::string& table_name, const std::string
 		delete registry_db;
 		return nullptr;
 	}
-	registry_db->Get(rocksdb::ReadOptions(), key, &contains_key_string);
-	result_tmp = json::parse(contains_key_string);
-	if (!result_tmp.is_array()) {
-		delete db, registry_db;
-		return nullptr;
+	s = db->Get(rocksdb::ReadOptions(), key, &uuids_res_string);
+	switch (s.code()) {
+		case 0: // found
+			uuids_res_json = json::parse(uuids_res_string);
+#ifdef DEBUG
+			std::cout << "uuids_res_json: " << uuids_res_json << std::endl;
+#endif
+			for (auto& i : uuids_res_json) {
+				db->Get(rocksdb::ReadOptions(), i.dump(), &transient_res_string);
+				res.push_back(transient_res_string);
+				transient_res_string.clear();
+			}
+			break;
+		case 1: // not found
+		default:
+			delete db;
+			delete registry_db;
+			return "[]";
 	}
-	for (auto& i : result_tmp) {
-		db->Get(rocksdb::ReadOptions(), i.dump(), &contains_key_string); // contains_key_string is a container
-		refined_result.push_back(contains_key_string);
-	}
+#ifdef DEBUG
+	json debug_print;
+	debug_print["uuids_res_string"] = uuids_res_string;
+	debug_print["uuids_res_json"] = uuids_res_json.dump(4);
+	debug_print["res"] = res.dump(4);
+#endif
 	delete db;
 	delete registry_db;
 
-	return refined_result.dump();
+	return res.dump();
 }
