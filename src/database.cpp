@@ -117,7 +117,7 @@ bool Database::update_registry(const std::string& uuid, const json payload) {
 	return true;
 }
 
-const std::string Database::get(const std::string& table_name, const std::string& key) const {
+std::string Database::get(const std::string& table_name, const std::string& key) const {
 	rocksdb::DB* db;
 	rocksdb::DB* registry_db;
 	rocksdb::Status s;

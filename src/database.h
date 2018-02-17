@@ -20,7 +20,8 @@ public:
 	bool insert(const std::string& table_name, const json payload);
 	bool exists(const std::string& table_name) const;
 	bool update_registry(const std::string& uuid, const json payload);
-	const std::string get(const std::string& table_name, const std::string& key) const;
+	std::string get(const std::string& table_name, const std::string& key) const;
+
 
 	rocksdb::Options options;
 	boost::uuids::random_generator uuid_gen;
