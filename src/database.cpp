@@ -84,7 +84,7 @@ bool Database::update_registry(const std::string& uuid, const json payload) {
 	std::string contains_key_string;
 	if (!payload.is_object()) return false;
 	rocksdb::DB::Open(options, "registry", &db);
-	for (json::iterator it = payload.begin(); it != payload.end(); ++it) {
+	for (auto it = payload.begin(); it != payload.end(); ++it) {
 		keys_vector.push_back(it.key());
 		s = db->Get(rocksdb::ReadOptions(), it.key(), &contains_key_string);
 		if (s.IsNotFound()) {
