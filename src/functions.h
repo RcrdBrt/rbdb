@@ -31,6 +31,9 @@ namespace utils {
 
 	std::string json_str_to_str(const json& j);
 
+	namespace db {
+		bool exists(rocksdb::DB* db, json j);
+	}
 }
 
 #endif
