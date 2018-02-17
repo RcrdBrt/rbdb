@@ -35,7 +35,8 @@ bool Database::insert(const std::string& table_name, const json payload) {
 		std::cerr << s.ToString() << std::endl;
 		return false;
 	}
-	std::string incr_id_str, uuid, payload_str;
+	std::string incr_id_str, uuid, payload_str, all_entries_str;
+	json all_entries_json;
 	uuid = boost::uuids::to_string(uuid_gen());
 	payload_str = payload.dump();
 	s = db->Get(rocksdb::ReadOptions(), "incr_id", &incr_id_str);
@@ -45,6 +46,8 @@ bool Database::insert(const std::string& table_name, const json payload) {
 			// db already existent
 			incr_id = std::atoll(incr_id_str.c_str());
 			incr_id_str = std::to_string(++incr_id);
+			db->Get(rocksdb::ReadOptions(), table_name+":entries", &all_entries_str);
+			all_entries_json = json::parse(all_entries_str);
 			batch.Put("incr_id", incr_id_str);
 			batch.Put(incr_id_str, uuid);
 			break;
@@ -52,13 +55,16 @@ bool Database::insert(const std::string& table_name, const json payload) {
 			// new database
 			batch.Put("incr_id", "1");
 			batch.Put("1", uuid);
+			all_entries_json = json::parse("[]");
 			break;
 		default:
 			delete db;
 			std::cerr << s.ToString() << std::endl;
 			return false;
 	}
+	all_entries_json.push_back(payload_str);
 	batch.Put(uuid, payload_str);
+	batch.Put(table_name+":entries", all_entries_json.dump());
 	batch.Put(utils::iso_time(), uuid);
 	db->Write(rocksdb::WriteOptions(), &batch);
 	update_registry(uuid, payload);
@@ -68,6 +74,7 @@ bool Database::insert(const std::string& table_name, const json payload) {
 	debug_print["uuid"] = uuid;
 	debug_print["id"] = incr_id_str;
 	debug_print["payload"] = payload_str;
+	debug_print["all_entries_json"] = all_entries_json.dump(4);
 	std::cout << debug_print.dump(4) << std::endl << std::endl;
 	std::cout << "-----------------------------" << std::endl << std::endl;
 #endif
@@ -169,4 +176,8 @@ std::string Database::get(const std::string& table_name, const std::string& key)
 	delete registry_db;
 
 	return res.dump(4);
+}
+
+bool Database::exists(rocksdb::DB* db, json j) const {
+	return false;	
 }
