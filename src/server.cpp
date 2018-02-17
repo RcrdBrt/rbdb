@@ -62,6 +62,13 @@ Server::Server(const Config& conf) {
 			Database db;
 			std::string content = db.get(req->path_match[1],
 					req->path_match[2]);
+#ifdef DEBUG
+			std::cout << "Get all request: ";
+			json debug_print;
+			debug_print["table_name"] = req->path_match[1];
+			debug_print["key"] = req->path_match[2];
+			std::cout << debug_print.dump(4) << std::endl;
+#endif
 			if (content.empty()) {
 				*res << "HTTP/1.1 404 Not Found\r\n";
 				return;

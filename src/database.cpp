@@ -5,6 +5,7 @@
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_io.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/algorithm/string.hpp>
 #include <iostream>
 
 Database::Database() {
@@ -121,19 +122,16 @@ const std::string Database::get(const std::string& table_name, const std::string
 	rocksdb::DB* registry_db;
 	rocksdb::Status s;
 	std::string uuids_res_string, transient_res_string;
+	std::string dumped; // this is to prevent quote chars
 	json uuids_res_json, transient_res_json, res;
-	s = rocksdb::DB::Open(options, table_name, &db);
-	if (!s.ok()) {
-		delete db;
-		return nullptr;
-	}
+	rocksdb::DB::Open(options, table_name, &db);
 	s = rocksdb::DB::Open(options, "registry", &registry_db);
 	if (!s.ok()) {
 		delete db;
 		delete registry_db;
-		return nullptr;
+		return "";
 	}
-	s = db->Get(rocksdb::ReadOptions(), key, &uuids_res_string);
+	s = registry_db->Get(rocksdb::ReadOptions(), key, &uuids_res_string);
 	switch (s.code()) {
 		case 0: // found
 			uuids_res_json = json::parse(uuids_res_string);
@@ -141,16 +139,27 @@ const std::string Database::get(const std::string& table_name, const std::string
 			std::cout << "uuids_res_json: " << uuids_res_json << std::endl;
 #endif
 			for (auto& i : uuids_res_json) {
-				db->Get(rocksdb::ReadOptions(), i.dump(), &transient_res_string);
+				dumped = i.dump();
+				s = db->Get(rocksdb::ReadOptions(),
+						dumped.substr(1, dumped.size()-2),
+						&transient_res_string);
+#ifdef DEBUG
+				std::cout << "looking for: " << i << std::endl;
+				std::cout << "result (" << s.ToString() << "): " 
+					<< transient_res_string << std::endl;
+#endif
 				res.push_back(transient_res_string);
 				transient_res_string.clear();
 			}
 			break;
 		case 1: // not found
+#ifdef DEBUG
+			std::cout << key << ": not found" << std::endl;
+#endif
 		default:
 			delete db;
 			delete registry_db;
-			return "[]";
+			return "";
 	}
 #ifdef DEBUG
 	json debug_print;
@@ -161,5 +170,5 @@ const std::string Database::get(const std::string& table_name, const std::string
 	delete db;
 	delete registry_db;
 
-	return res.dump();
+	return res.dump(4);
 }
