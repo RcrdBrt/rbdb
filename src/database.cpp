@@ -122,14 +122,13 @@ const std::string Database::get(const std::string& table_name, const std::string
 	rocksdb::DB* registry_db;
 	rocksdb::Status s;
 	std::string uuids_res_string, transient_res_string;
-	std::string dumped; // this is to prevent quote chars
 	json uuids_res_json, transient_res_json, res;
 	rocksdb::DB::Open(options, table_name, &db);
 	s = rocksdb::DB::Open(options, "registry", &registry_db);
 	if (!s.ok()) {
 		delete db;
 		delete registry_db;
-		return "";
+		return "[]";
 	}
 	s = registry_db->Get(rocksdb::ReadOptions(), key, &uuids_res_string);
 	switch (s.code()) {
@@ -139,9 +138,8 @@ const std::string Database::get(const std::string& table_name, const std::string
 			std::cout << "uuids_res_json: " << uuids_res_json << std::endl;
 #endif
 			for (auto& i : uuids_res_json) {
-				dumped = i.dump();
 				s = db->Get(rocksdb::ReadOptions(),
-						dumped.substr(1, dumped.size()-2),
+						utils::json_str_to_str(i),
 						&transient_res_string);
 #ifdef DEBUG
 				std::cout << "looking for: " << i << std::endl;
@@ -159,7 +157,7 @@ const std::string Database::get(const std::string& table_name, const std::string
 		default:
 			delete db;
 			delete registry_db;
-			return "";
+			return "[]";
 	}
 #ifdef DEBUG
 	json debug_print;

@@ -68,10 +68,6 @@ Server::Server(const Config& conf) {
 			debug_print["key"] = req->path_match[2];
 			std::cout << debug_print.dump(4) << std::endl;
 #endif
-			if (content.empty()) {
-				*res << "HTTP/1.1 404 Not Found\r\n";
-				return;
-			}
 			*res << *(res_str(content.length(), content));
 		};
 }

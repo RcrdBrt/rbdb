@@ -8,6 +8,8 @@
 #include "rocksdb/db.h"
 #include "nlohmann/json.hpp"
 
+using json = nlohmann::json;
+
 namespace utils {
 
 	std::size_t dir_size(const std::string& path);
@@ -26,6 +28,9 @@ namespace utils {
 	std::string iso_time();
 
 	void up_a_dir();
+
+	std::string json_str_to_str(const json& j);
+
 }
 
 #endif

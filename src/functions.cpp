@@ -60,4 +60,15 @@ namespace utils {
     void up_a_dir() {
         io::current_path("..");
     }
+
+    std::string json_str_to_str(const json& j) {
+	    std::string res;
+	    if (j.is_string()) {
+		    res = j.dump();
+		    return res.substr(1, res.size()-2);
+	    }
+	    std::cout << "Error, passed json is not a string: " << j.dump(4) << std::endl;
+
+	    return "Error, passed json is not a string";
+    }
 }
