@@ -72,9 +72,4 @@ namespace utils {
 		return "Error, passed json is not a string";
 	}
 
-	namespace db {
-		bool exists(rocksdb::DB* db, json j) {
-
-		}
-	}
 }
