@@ -30,17 +30,16 @@ Server::Server(const Config& conf) {
 			Database db;
 			std::string payload = req->content.string();
 			std::string table_name = req->path_match[1];
-			json_ptr json_payload;
+			json payload_json;
 			try {
-				json_payload =
-					std::make_shared<json>(json::parse(payload));
+				payload_json = json::parse(payload);
 			} catch (json::parse_error& e) {
 				std::cerr << e.what() << std::endl;
 				res->write("HTTP/1.1 400 Bad Request\r\n");
 				return;
 			}
 
-			if (db.insert(table_name, json_payload)) {
+			if (db.insert(table_name, payload_json)) {
 				res->write("HTTP/1.1 200 OK\r\n");
 			} else {
 				res->write("HTTP/1.1 500 Internal Server Error\r\n");

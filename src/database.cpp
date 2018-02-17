@@ -25,7 +25,7 @@ bool Database::exists(const std::string& table_name) const {
 	return boost::filesystem::exists(table_name);
 }
 
-bool Database::insert(const std::string& table_name, const json_ptr payload) {
+bool Database::insert(const std::string& table_name, const json payload) {
 	rocksdb::DB* db;
 	rocksdb::Status s;
 	long long incr_id;
@@ -37,7 +37,7 @@ bool Database::insert(const std::string& table_name, const json_ptr payload) {
 	}
 	std::string incr_id_str, uuid, payload_str;
 	uuid = boost::uuids::to_string(uuid_gen());
-	payload_str = payload->dump();
+	payload_str = payload.dump();
 	s = db->Get(rocksdb::ReadOptions(), "incr_id", &incr_id_str);
 	rocksdb::WriteBatch batch;
 	switch (s.code()) {
@@ -75,16 +75,16 @@ bool Database::insert(const std::string& table_name, const json_ptr payload) {
 	return true;
 }
 
-bool Database::update_registry(const std::string& uuid, const json_ptr payload) {
+bool Database::update_registry(const std::string& uuid, const json payload) {
 	rocksdb::DB* db;
 	rocksdb::WriteBatch batch;
 	rocksdb::Status s;
 	json contains_key_json;
 	std::vector<std::string> keys_vector;
 	std::string contains_key_string;
-	if (!payload->is_object()) return false;
+	if (!payload.is_object()) return false;
 	rocksdb::DB::Open(options, "registry", &db);
-	for (json::iterator it = payload->begin(); it != payload->end(); ++it) {
+	for (json::iterator it = payload.begin(); it != payload.end(); ++it) {
 		keys_vector.push_back(it.key());
 		s = db->Get(rocksdb::ReadOptions(), it.key(), &contains_key_string);
 		if (s.IsNotFound()) {
