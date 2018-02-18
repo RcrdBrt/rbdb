@@ -3,4 +3,4 @@
 	port = 8081
 
 [database]
-	path = "/home/riccardo/rbdb_data"
+	path = "./rbdb_data"
