@@ -10,11 +10,11 @@ CFLAGS = -Ivendor/Simple-Web-Server \
 	-lrocksdb \
 	-lpthread \
 	-lboost_date_time \
-	-g \
 	-Wno-psabi \
 	-pedantic \
 	-MMD \
-	-DDEBUG \
+	-D_FORTIFY_SOURCE=2 -Wformat -Wformat-security -fstack-protector-strong \
+	-DDEBUG -O2 -g \
 	#-Ofast -flto -march=native -s # high performance CFLAGS
 
 EXE_SRC_FILES = $(wildcard *.cpp)
