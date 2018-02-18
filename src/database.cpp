@@ -8,6 +8,8 @@
 #include <boost/algorithm/string.hpp>
 #include <iostream>
 
+namespace fs = boost::filesystem;
+
 Database::Database() {
 	options.create_if_missing = true;
 	options.max_background_compactions = 4;
@@ -22,7 +24,7 @@ Database::Database(const Database& orig) : uuid_gen(orig.uuid_gen) {}
 
 
 bool Database::exists(const std::string& table_name) const {
-	return boost::filesystem::exists(table_name);
+	return fs::exists(table_name);
 }
 
 bool Database::insert(const std::string& table_name, const json payload) {
@@ -187,5 +189,11 @@ bool Database::exists(rocksdb::DB* db, std::string& table_name, json j) const {
 		if (i == j)
 			return true;
 	}
+
 	return false;
 }
+
+bool Database::exists(rocksdb::DB* db, std::string& table_name, std::string& val) const {
+	return exists(db, table_name, json::parse(val));
+}
+
