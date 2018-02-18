@@ -21,7 +21,7 @@ public:
 	bool exists(const std::string& table_name) const;
 	bool update_registry(const std::string& uuid, const json payload);
 	std::string get(const std::string& table_name, const std::string& key) const;
-	bool exists(rocksdb::DB* db, json j) const;
+	bool Database::exists(rocksdb::DB* db, std::string& table_name, json j) const
 
 	rocksdb::Options options;
 	boost::uuids::random_generator uuid_gen;
