@@ -31,7 +31,8 @@ bin/%: build/%.o $(O_FILES)
 
 build/%.o: %.cpp
 	@mkdir -p $(@D)
-	g++ -c $(CFLAGS) $< -o $@
+	@g++ -c $(CFLAGS) $< -o $@
+	@echo "CC $<"
 
 -include $(shell find build -name "*.d" 2> /dev/null)
 
