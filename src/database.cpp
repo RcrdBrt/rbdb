@@ -178,6 +178,14 @@ std::string Database::get(const std::string& table_name, const std::string& key)
 	return res.dump(4);
 }
 
-bool Database::exists(rocksdb::DB* db, json j) const {
-	return false;	
+bool Database::exists(rocksdb::DB* db, std::string& table_name, json j) const {
+	std::string all_keys_str;
+	json all_keys_json;
+	db->Get(rocksdb::ReadOptions(), table_name+":entries", &all_keys_str);
+	all_keys_json = json::parse(all_keys_str);
+	for (auto& i : all_keys_json) {
+		if (i == j)
+			return true;
+	}
+	return false;
 }
