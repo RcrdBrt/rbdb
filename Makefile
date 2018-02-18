@@ -12,6 +12,7 @@ CFLAGS = -Ivendor/Simple-Web-Server \
 	-lboost_date_time \
 	-Wno-psabi \
 	-pedantic \
+	-Wall -Wextra \
 	-MMD \
 	-D_FORTIFY_SOURCE=2 -Wformat -Wformat-security -fstack-protector-strong \
 	-DDEBUG -O2 -g \

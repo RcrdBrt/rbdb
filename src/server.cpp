@@ -37,7 +37,7 @@ Server::Server(const Config& conf) {
 
 	// root
 	server.resource["^/rbdb(/{1})?$"]["GET"] =
-		[](Response res, Request req) {
+		[](Response res, Request) {
 			res->write("Hello World!\n");
 			*res << "HTTP/1.1 200 OK\r\n";
 		};
